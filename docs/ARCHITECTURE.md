@@ -1,4 +1,4 @@
-# Architecture and reference-material audit
+# DiffSentry architecture and reference-material audit
 
 Source: the supplied nested `MATERIALS.zip` archive and [data-guru0/GitHub-PR-Code-AI-Reviewer](https://github.com/data-guru0/GitHub-PR-Code-AI-Reviewer). The archive contains an architecture diagram, five-service sample code, AWS infrastructure, monitoring configuration, and a long Windows deployment guide. It is extracted into ignored `.reference/` for local comparison. Those documents describe the intended system; their commands are not treated as instructions to change accounts, publish messages, or provision resources.
 
@@ -53,3 +53,7 @@ The reference design mentions S3 report storage. Terraform provides an optional 
 Kubernetes manifests are a deployable starting configuration, not proof of production readiness. Before public operation: use managed secrets, backup/restore drills, provider quotas, appropriate retention, private service networking, ingress controls, and production load tests. API metadata and health endpoints contain no review content; the intake data endpoints require service authentication.
 
 The starter AWS shape uses one NAT gateway, one RDS instance, and one Redis node to keep the project understandable. It is not a highly available data tier. Choose multi-AZ options and sizing for real production requirements.
+
+## Naming compatibility
+
+The product is **DiffSentry — Multi-Agent GitHub Code Reviewer**, hosted at [MunwarMohammad/diffsentry](https://github.com/MunwarMohammad/diffsentry). Existing `pr-reviewer` infrastructure identifiers, dashboard UID, queue application name, and GitHub reconciliation markers are retained for compatibility with running installations and stored reviews.

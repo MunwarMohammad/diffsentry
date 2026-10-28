@@ -19,7 +19,7 @@ def headers():
 
 
 def make_app(name: str, database: bool = True):
-    app = FastAPI(title=f"PR Reviewer · {name}", version="0.1.0")
+    app = FastAPI(title=f"DiffSentry · {name}", version="0.1.0")
     Instrumentator().instrument(app).expose(app)
 
     @app.get("/health")

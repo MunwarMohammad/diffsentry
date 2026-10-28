@@ -1,5 +1,5 @@
 def summary(review):
-    lines = ["## AI code review", f"Commit: `{review.head_sha}`", ""]
+    lines = ["## DiffSentry code review", f"Commit: `{review.head_sha}`", ""]
     if review.findings:
         lines.append(
             f"Found {len(review.findings)} potential issues. Verify suggestions before applying them."

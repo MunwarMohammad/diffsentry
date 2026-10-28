@@ -1,4 +1,8 @@
-# AI GitHub PR Reviewer
+# DiffSentry — Multi-Agent GitHub Code Reviewer
+
+**DiffSentry** reviews pull requests with four specialized agents and delivers actionable, commit-specific feedback.
+
+[GitHub repository](https://github.com/MunwarMohammad/diffsentry)
 
 A runnable implementation of the project in your `MATERIALS.zip` and [reference repository](https://github.com/data-guru0/GitHub-PR-Code-AI-Reviewer). Five FastAPI services validate GitHub webhooks, queue durable jobs, run four LangGraph review agents, publish commit-specific review comments, and collect recurring observations after merge.
 
@@ -107,7 +111,7 @@ docker compose --profile monitoring up -d
 
 - Grafana: http://localhost:3100 — local credentials `admin` / `local-demo-only`.
 - Prometheus: http://localhost:9190.
-- Dashboard: **PR Reviewer · Service health**.
+- Dashboard: **DiffSentry · Service health**.
 - Langfuse: optional, off by default. Set its public/secret keys, `LANGFUSE_BASE_URL`, and `LANGFUSE_ENABLED=true`. The code records agent generation spans without deliberately attaching source code or findings. Live tracing requires separate verification with your Langfuse project.
 
 ## Deployment and project guide
