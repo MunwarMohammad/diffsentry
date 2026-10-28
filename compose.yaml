@@ -1,0 +1,90 @@
+name: pr-reviewer
+x-app: &app
+  build: .
+  image: pr-reviewer:local
+  env_file:
+    - path: .env
+      required: false
+  environment: &environment
+    DATABASE_URL: postgresql+psycopg://reviewer:localdev@postgres:5432/reviewer
+    REDIS_URL: redis://redis:6379/0
+    WEBHOOK_URL: http://webhook:8000
+    ORCHESTRATOR_URL: http://orchestrator:8000
+    PUBLISHER_URL: http://publisher:8000
+    LEARNER_URL: http://learner:8000
+  depends_on:
+    migrate: {condition: service_completed_successfully}
+    redis: {condition: service_healthy}
+  restart: unless-stopped
+  healthcheck: &health
+    test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:8000/ready')"]
+    interval: 10s
+    timeout: 5s
+    retries: 10
+    start_period: 15s
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment: {POSTGRES_DB: reviewer, POSTGRES_USER: reviewer, POSTGRES_PASSWORD: localdev}
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U reviewer]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  redis:
+    image: redis:7-alpine
+    command: [redis-server, --appendonly, "yes"]
+    volumes: [redis-data:/data]
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  migrate:
+    <<: *app
+    command: [alembic, upgrade, head]
+    depends_on:
+      postgres: {condition: service_healthy}
+    restart: "no"
+    healthcheck: {disable: true}
+  gateway:
+    <<: *app
+    ports: ["127.0.0.1:${GATEWAY_PORT:-8100}:8000"]
+  webhook:
+    <<: *app
+    command: [uvicorn, services.webhook.main:app, --host, 0.0.0.0, --port, "8000"]
+    ports: ["127.0.0.1:${INTAKE_PORT:-8101}:8000"]
+  orchestrator:
+    <<: *app
+    command: [uvicorn, services.orchestrator.main:app, --host, 0.0.0.0, --port, "8000"]
+  publisher:
+    <<: *app
+    command: [uvicorn, services.publisher.main:app, --host, 0.0.0.0, --port, "8000"]
+  learner:
+    <<: *app
+    command: [uvicorn, services.learner.main:app, --host, 0.0.0.0, --port, "8000"]
+  worker:
+    <<: *app
+    command: [celery, -A, reviewer.worker:app, worker, --loglevel=INFO, -Q, "celery,reviews,learning", --concurrency=2]
+    healthcheck: {disable: true}
+  beat:
+    <<: *app
+    command: [celery, -A, reviewer.worker:app, beat, --loglevel=INFO, --schedule=/tmp/celerybeat-schedule]
+    healthcheck: {disable: true}
+  prometheus:
+    image: prom/prometheus:v3.2.1
+    profiles: [monitoring]
+    ports: ["127.0.0.1:${PROMETHEUS_PORT:-9190}:9090"]
+    volumes: [./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro]
+  grafana:
+    image: grafana/grafana:11.6.0
+    profiles: [monitoring]
+    ports: ["127.0.0.1:${GRAFANA_PORT:-3100}:3000"]
+    environment: {GF_SECURITY_ADMIN_USER: admin, GF_SECURITY_ADMIN_PASSWORD: local-demo-only}
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/dashboard.json:/var/lib/grafana/dashboards/reviewer.json:ro
+volumes:
+  postgres-data:
+  redis-data:

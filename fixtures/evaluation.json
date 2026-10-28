@@ -1,0 +1,56 @@
+[
+  {
+    "name": "unsafe calculator",
+    "files": [
+      {
+        "filename": "app/calculator.py",
+        "status": "added",
+        "additions": 7,
+        "patch": "@@ -0,0 +1,7 @@\n+def calculate(user_input):\n+    try:\n+        return eval(user_input)\n+    except:\n+        return None\n+\n+result = 10 / 0"
+      }
+    ],
+    "expected": [
+      [
+        "app/calculator.py",
+        3,
+        "security"
+      ],
+      [
+        "app/calculator.py",
+        4,
+        "architecture"
+      ],
+      [
+        "app/calculator.py",
+        7,
+        "static_analysis"
+      ]
+    ]
+  },
+  {
+    "name": "clean addition",
+    "files": [
+      {
+        "filename": "add.py",
+        "patch": "@@ -0,0 +1,2 @@\n+def add(a, b):\n+    return a + b"
+      }
+    ],
+    "expected": []
+  },
+  {
+    "name": "readability",
+    "files": [
+      {
+        "filename": "flag.py",
+        "patch": "@@ -0,0 +1,2 @@\n+if flag == True:\n+    print(\"enabled\")"
+      }
+    ],
+    "expected": [
+      [
+        "flag.py",
+        1,
+        "style"
+      ]
+    ]
+  }
+]

@@ -1,0 +1,8 @@
+[
+  {
+    "filename": "app/calculator.py",
+    "status": "added",
+    "additions": 7,
+    "patch": "@@ -0,0 +1,7 @@\n+def calculate(user_input):\n+    try:\n+        return eval(user_input)\n+    except:\n+        return None\n+\n+result = 10 / 0"
+  }
+]

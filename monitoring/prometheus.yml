@@ -1,0 +1,6 @@
+global:
+  scrape_interval: 15s
+scrape_configs:
+  - job_name: pr-reviewer
+    static_configs:
+      - targets: [gateway:8000, webhook:8000, orchestrator:8000, publisher:8000, learner:8000]

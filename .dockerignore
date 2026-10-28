@@ -1,0 +1,9 @@
+*
+!pyproject.toml
+!uv.lock
+!reviewer/**
+!services/**
+!scripts/**
+!fixtures/**
+!db/**
+!alembic.ini

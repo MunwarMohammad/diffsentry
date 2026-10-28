@@ -1,0 +1,6 @@
+region             = "us-east-1"
+name               = "pr-reviewer"
+# Replace with a version currently supported in your chosen AWS region.
+kubernetes_version = "REPLACE_WITH_SUPPORTED_VERSION"
+admin_cidrs        = ["YOUR_PUBLIC_IP/32"]
+admin_role_arn     = "arn:aws:iam::YOUR_ACCOUNT_ID:role/YOUR_ADMIN_ROLE"
