@@ -21,7 +21,7 @@ terraform -chdir=infra/terraform plan -out=deployment.tfplan
 terraform -chdir=infra/terraform apply deployment.tfplan
 ```
 
-Resources: VPC with two public/private subnet pairs and a NAT gateway; EKS with two managed nodes; private encrypted PostgreSQL and TLS/authenticated Redis; immutable ECR repository; private encrypted/versioned S3 reports bucket. The reports bucket is available for manual/CI exports; application reports currently remain in PostgreSQL and local/CI artifacts.
+Resources: VPC with two public/private subnet pairs and a NAT gateway; EKS with two managed nodes; private encrypted PostgreSQL and TLS/authenticated Redis; immutable ECR repository; private encrypted/versioned S3 reports bucket. The reports bucket is available for manual/CI exports; completed review reports can be archived by setting `REPORTS_S3_BUCKET` and granting a scoped workload IAM role access to the report prefix.
 
 Use an encrypted, access-controlled remote Terraform backend before team use. Terraform state contains generated database/cache credentials. Local state and variable files are ignored by Git, but still require filesystem protection.
 
@@ -82,7 +82,7 @@ If running on another Kubernetes provider, use its supported HTTPS ingress contr
 - Verify the actual GitHub review and merge-learning behavior.
 - Configure monitoring for your cluster, secure access to it, and verify any enabled Langfuse traces. Local Compose Grafana credentials are not production credentials.
 
-The Prometheus/Grafana files are tested with Compose. In Kubernetes, use your cluster monitoring stack to scrape service port 8000 at `/metrics`; adapt the NetworkPolicy to admit its namespace. Review status and terminal job failures are available from protected intake APIs.
+The Prometheus/Grafana files are tested with Compose. In Kubernetes, use your cluster monitoring stack to scrape service port 8000 at `/metrics`; adapt the NetworkPolicy to admit its namespace. Review status and terminal job failures are available from protected intake APIs. Scrape intake `/queue-metrics` and load the alert rules for durable job monitoring; see `OPERATIONS.md`.
 
 ## Release and cleanup
 

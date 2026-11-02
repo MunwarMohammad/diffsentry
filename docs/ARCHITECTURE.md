@@ -30,7 +30,7 @@ This implementation is written in the current workspace. It follows the architec
 
 ## Job lifecycle
 
-`pending → running → done`, or `running → pending → … → failed` after six attempts. Celery Beat dispatches the PostgreSQL outbox every ten seconds. Failed attempts use exponential backoff capped at five minutes. A ten-minute lease recovers abandoned running jobs; Celery's hard execution limit is shorter than that lease.
+`pending → queued → running → done`, or `running → pending → … → failed` after six attempts. Celery Beat dispatches the PostgreSQL outbox every ten seconds. Failed attempts use exponential backoff capped at five minutes. Dispatch generations reject obsolete broker messages, enforce retry delays, and fence late completion from expired workers. A ten-minute lease recovers abandoned running jobs; Celery's hard execution limit is shorter than that lease.
 
 PostgreSQL is required for concurrent deployment. SQLite supports isolated tests and single-process experiments only; it does not implement the row-lock semantics required for multiple workers.
 
@@ -46,7 +46,7 @@ Repository code and historical observations are passed as untrusted user data. T
 
 Learning stores observations from reviewed merged heads. It cannot determine whether developers accepted or fixed individual suggestions. These observations are never promoted to trusted system instructions.
 
-The reference design mentions S3 report storage. Terraform provides an optional private bucket; runtime review data is stored in PostgreSQL and evaluation reports are local/CI artifacts. Automatic S3 archival is not enabled. Langfuse spans provide basic generation tracing; token-cost accounting and quality dashboards are future extensions.
+The reference design mentions S3 report storage. Terraform provides an optional private bucket. Set `REPORTS_S3_BUCKET` to archive completed review reports; runtime data remains in PostgreSQL and evaluation reports remain local/CI artifacts. Optional automatic S3 archival uses separately retryable jobs. Langfuse spans provide basic generation tracing; token-cost accounting and quality dashboards are future extensions.
 
 ## Operational boundaries
 

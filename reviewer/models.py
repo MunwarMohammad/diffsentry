@@ -41,6 +41,7 @@ class Review(Base):
     findings: Mapped[list] = mapped_column(JSON, default=list)
     warnings: Mapped[list] = mapped_column(JSON, default=list)
     github_review_id: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    archive_uri: Mapped[str | None] = mapped_column(Text, nullable=True)
     learned: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
 
@@ -57,6 +58,7 @@ class Job(Base):
     status: Mapped[str] = mapped_column(String(20), default="pending")
     attempts: Mapped[int] = mapped_column(Integer, default=0)
     available_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    lease_token: Mapped[str | None] = mapped_column(String(36), nullable=True)
     last_error: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
 

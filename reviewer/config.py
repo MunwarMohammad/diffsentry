@@ -7,7 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore", hide_input_in_errors=True)
     environment: Literal["local", "production"] = "local"
     database_url: str = "sqlite:///reviewer.db"
     redis_url: str = "redis://localhost:6379/0"
@@ -29,6 +29,8 @@ class Settings(BaseSettings):
     max_diff_chars: int = Field(default=100_000, gt=0)
     max_findings: int = Field(default=30, ge=1, le=50)
     langfuse_enabled: bool = False
+    reports_s3_bucket: str = ""
+    reports_s3_prefix: str = "diffsentry"
 
     @model_validator(mode="after")
     def secure_production(self):
@@ -41,6 +43,10 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "Production requires live mode and an explicit repository allowlist"
                 )
+            if not self.database_url.startswith("postgresql"):
+                raise ValueError("Production requires PostgreSQL for concurrent row locking")
+            if self.github_webhook_secret == self.internal_api_token:
+                raise ValueError("Webhook and internal secrets must be different")
         if self.publish_reviews and self.review_mode != "live":
             raise ValueError("Demo findings cannot be published to GitHub")
         return self

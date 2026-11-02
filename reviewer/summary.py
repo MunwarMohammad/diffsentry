@@ -18,4 +18,7 @@ def summary(review):
         lines.append(
             f"- {len(review.warnings) - 30} further coverage warnings; inspect the stored review for details."
         )
-    return "\n".join(lines)
+    text = "\n".join(lines)
+    if len(text) > 55000:
+        text = text[:55000] + "\n\nSummary truncated; full findings are retained in DiffSentry."
+    return text

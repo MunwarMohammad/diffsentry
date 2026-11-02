@@ -103,6 +103,7 @@ def reviews():
                 "status": r.status,
                 "findings": r.findings,
                 "warnings": r.warnings,
+                "archive_uri": r.archive_uri,
             }
             for r in items
         ]
@@ -135,6 +136,20 @@ def retry_job(job_id: str):
             raise HTTPException(404, "Job not found")
         if job.status != "failed":
             raise HTTPException(409, "Only failed jobs can be retried manually")
+        job.lease_token = None
         job.status, job.attempts, job.last_error, job.available_at = "pending", 0, None, now()
         db.commit()
         return {"status": "pending"}
+
+
+@app.get("/queue-metrics", include_in_schema=False)
+def metrics():
+    from fastapi.responses import Response
+    from prometheus_client import CONTENT_TYPE_LATEST
+
+    from reviewer.metrics import queue_metrics
+
+    try:
+        return Response(queue_metrics(), media_type=CONTENT_TYPE_LATEST)
+    except Exception:
+        raise HTTPException(503, "Queue metrics unavailable") from None

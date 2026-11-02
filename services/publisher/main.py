@@ -2,6 +2,7 @@ from fastapi import Depends, HTTPException
 from sqlalchemy import select
 
 from reviewer.api import authorize, make_app
+from reviewer.archive import enqueue_archive
 from reviewer.config import get_settings
 from reviewer.database import session
 from reviewer.github import StaleReview, github_client, publish
@@ -18,6 +19,8 @@ def post_review(request: ReviewRequest):
         if review is None:
             raise HTTPException(404, "Review not found")
         if review.status in {"published", "dry_run", "superseded"}:
+            enqueue_archive(db, review)
+            db.commit()
             return {"status": review.status}
         if review.status != "analyzed":
             raise HTTPException(409, "Analysis is not complete")
@@ -40,5 +43,6 @@ def post_review(request: ReviewRequest):
                 review.status = "published"
             except StaleReview:
                 review.status = "superseded"
+        enqueue_archive(db, review)
         db.commit()
         return {"status": review.status, "summary": body}

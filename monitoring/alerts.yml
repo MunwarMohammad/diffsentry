@@ -1,0 +1,21 @@
+groups:
+  - name: diffsentry
+    rules:
+      - alert: DiffSentryServiceDown
+        expr: up{job=~"pr-reviewer|diffsentry-queue"} == 0
+        for: 2m
+        labels: {severity: critical}
+        annotations:
+          summary: "DiffSentry service {{ $labels.instance }} is unavailable"
+      - alert: DiffSentryFailedJobs
+        expr: sum(diffsentry_jobs{status="failed"}) > 0
+        for: 1m
+        labels: {severity: warning}
+        annotations:
+          summary: "DiffSentry has terminally failed jobs; inspect the protected /jobs API"
+      - alert: DiffSentryQueueStalled
+        expr: diffsentry_overdue_seconds > 300
+        for: 2m
+        labels: {severity: critical}
+        annotations:
+          summary: "DiffSentry has overdue work; check beat, workers and Redis"

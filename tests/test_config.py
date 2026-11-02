@@ -21,6 +21,7 @@ def test_production_rejects_demo_secrets_and_modes():
 def test_production_configuration_and_allowlist():
     settings = Settings(
         environment="production",
+        database_url="postgresql+psycopg://example/db",
         github_webhook_secret="a" * 32,
         internal_api_token="b" * 32,
         review_mode="live",

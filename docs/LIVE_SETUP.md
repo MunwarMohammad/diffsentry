@@ -1,5 +1,7 @@
 # Connect GitHub and OpenAI
 
+For your first local registration, follow [the step-by-step App setup](GITHUB_APP_SETUP.md).
+
 ## 1. Create a GitHub App
 
 In GitHub developer settings, create a GitHub App that belongs to your account/organization. Give it these repository permissions:

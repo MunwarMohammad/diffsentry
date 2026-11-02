@@ -13,8 +13,8 @@ A runnable implementation of the project in your `MATERIALS.zip` and [reference 
 Prerequisites: Docker Desktop running; [uv](https://docs.astral.sh/uv/) for Python commands. Run commands in this project folder.
 
 ```bash
-cp .env.example .env
 uv sync --frozen --python 3.12
+uv run python -m scripts.init_env
 uv run python -m scripts.demo
 ```
 
@@ -37,10 +37,10 @@ The smoke test sends a signed webhook, verifies deduplication, waits for a dry-r
 | http://localhost:8101/reviews | Stored reviews; bearer token required |
 | http://localhost:8101/jobs | Job state, retry count, sanitized failure type |
 
-In the intake API docs, use **Try it out** and set the `authorization` header to `Bearer local-demo-internal-token` for the default local setup. Ports can be changed with `GATEWAY_PORT` and `INTAKE_PORT` environment variables.
+The setup command generates unique secrets in your local `.env`. In the intake API docs, use **Try it out** and set the `authorization` header to `Bearer YOUR_INTERNAL_API_TOKEN` using that file. Ports can be changed with `GATEWAY_PORT` and `INTAKE_PORT` environment variables.
 
 ```bash
-curl -H 'Authorization: Bearer local-demo-internal-token' http://localhost:8101/reviews
+curl -H 'Authorization: Bearer YOUR_INTERNAL_API_TOKEN' http://localhost:8101/reviews
 docker compose logs -f worker orchestrator
 docker compose stop
 ```
@@ -58,7 +58,7 @@ docker compose stop
 - Reconciliation markers for retries after GitHub accepted a review but the database commit failed.
 - Idempotent learning on merge. Observations are labeled unverified; merge is **not** treated as proof that a suggestion was accepted.
 - Docker Compose, non-root image, Kubernetes manifests, optional AWS Terraform infrastructure.
-- Prometheus metrics, provisioned Grafana dashboard, optional Langfuse generation spans.
+- Prometheus service and durable queue metrics, alert rules, provisioned Grafana dashboard, optional Langfuse generation spans.
 - Tests, fixture evaluation, GitHub Actions CI, manual image release workflow, weekly offline regression evaluation.
 
 ## Architecture
@@ -83,6 +83,18 @@ flowchart LR
 ```
 
 The publisher is the “reviewer service” in the supplied architecture; its name distinguishes posting from analysis. All services share one image and versioned domain package to avoid schema and authentication drift.
+
+## Operational checks
+
+```bash
+uv run python -m scripts.doctor --services
+uv run python -m scripts.resilience
+uv run python -m scripts.backup --verify
+```
+
+The resilience drill temporarily stops this project's Redis, submits 100 duplicate webhooks, restarts Redis, and verifies one completed review. Run it only against this local demo stack. Backup verification restores into a disposable PostgreSQL database and checks row counts. Backups are stored with owner-only file permissions under ignored `reports/backups/`.
+
+Optional S3 archival is enabled by setting `REPORTS_S3_BUCKET` and AWS credentials through the standard AWS provider chain. It runs as a separate durable job after review completion. See [operations](docs/OPERATIONS.md).
 
 ## Enable real reviews
 
@@ -116,7 +128,9 @@ docker compose --profile monitoring up -d
 
 ## Deployment and project guide
 
+- [Create your GitHub App](docs/GITHUB_APP_SETUP.md)
 - [Live GitHub/OpenAI setup](docs/LIVE_SETUP.md)
+- [Recovery, alerts, backups and archival](docs/OPERATIONS.md)
 - [AWS and Kubernetes deployment](docs/DEPLOYMENT.md)
 - [Architecture, reliability tradeoffs, and source-material audit](docs/ARCHITECTURE.md)
 - [Suggested build/learning order](docs/LEARNING_PATH.md)

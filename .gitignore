@@ -19,3 +19,5 @@ reports/
 *.tfvars
 !*.tfvars.example
 infra/k8s/secret.yaml
+
+secrets/

@@ -1,20 +1,23 @@
 # Verification record
 
-Verified locally on October 27, 2026 (America/Chicago), using Python 3.12 and Docker Desktop on this Mac.
+Updated local verification on November 2, 2026 (America/Chicago), using Python 3.12 and Docker Desktop on this Mac.
 
 | Check | Result |
 |---|---|
 | Ruff lint and formatting | Passed |
-| Unit/service tests | 30 passed |
-| Statement coverage, application/services | 89% |
+| Unit/service tests | 41 passed |
+| Statement coverage, application/services | 90% |
 | Offline four-agent demo | Three findings with correct fixture line locations |
 | Labeled fixture evaluation | Precision 1.0, recall 1.0 in deterministic demo mode |
 | Alembic migration + schema comparison | Upgrade succeeded; no new upgrade operations detected |
 | Docker image + Compose startup | Passed; five HTTP services ready |
 | End-to-end signed webhook | Passed through PostgreSQL, Redis, Celery, orchestrator and publisher dry run |
-| Duplicate delivery | Same review ID; no extra review job |
+| Duplicate delivery and broker outage | 100 concurrent duplicate webhooks accepted while Redis was stopped; exactly one review/job, completed after restart |
+| Backup restoration | Custom-format PostgreSQL backup restored into a disposable database; row counts matched |
+| Operational alert rules | Three Prometheus alert rules passed promtool validation |
+| S3 archive worker | Separate durable job; retry/idempotency verified with mocked S3 |
 | Merge learning | Completed once; both jobs reached done |
-| Prometheus | All five service targets up |
+| Prometheus | All five service targets and durable queue scrape up |
 | Grafana | Health OK; provisioned dashboard accessible |
 | Terraform | Init without backend and validate passed; provider lock file generated |
 | Kubernetes | YAML parsed and Kustomize rendered successfully |

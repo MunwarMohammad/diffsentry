@@ -31,7 +31,7 @@ def make_app(name: str, database: bool = True):
         if database:
             try:
                 with engine().connect() as connection:
-                    connection.execute(text("SELECT 1"))
+                    connection.execute(text("SELECT lease_token FROM jobs LIMIT 0"))
             except Exception:
                 raise HTTPException(503, "Database unavailable") from None
         return {"status": "ready"}
