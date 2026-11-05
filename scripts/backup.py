@@ -33,7 +33,7 @@ def main():
     print(f"Saved database backup: {path}")
     if args.verify:
         name = "diffsentry_restore_" + uuid.uuid4().hex
-        query = "SELECT (SELECT count(*) FROM reviews),(SELECT count(*) FROM jobs),(SELECT count(*) FROM patterns);"
+        query = "SELECT (SELECT count(*) FROM reviews),(SELECT count(*) FROM jobs),(SELECT count(*) FROM patterns),(SELECT count(*) FROM generations);"
         # Validation assumes no new test webhooks are being sent during this brief drill.
         expected = docker("psql", "-U", "reviewer", "-d", "reviewer", "-tAc", query).stdout.strip()
         docker("createdb", "-U", "reviewer", name)
@@ -42,7 +42,7 @@ def main():
             actual = docker("psql", "-U", "reviewer", "-d", name, "-tAc", query).stdout.strip()
             if actual != expected:
                 raise RuntimeError("Restore row counts differ; stop test traffic and retry")
-            print("PASS: backup restored; review, job and pattern counts match.")
+            print("PASS: backup restored; review, job, pattern and usage counts match.")
         finally:
             docker("dropdb", "-U", "reviewer", name)
 

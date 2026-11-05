@@ -10,6 +10,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    Numeric,
     String,
     Text,
     UniqueConstraint,
@@ -70,6 +71,25 @@ class Pattern(Base):
     pattern_key: Mapped[str] = mapped_column(String(64))
     text: Mapped[str] = mapped_column(Text)
     frequency: Mapped[int] = mapped_column(Integer, default=1)
+
+
+class Generation(Base):
+    __tablename__ = "generations"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    # Deliberately no FK: usage must commit independently while analysis holds
+    # the review row lock, and survive rollback of a failed parallel graph.
+    review_id: Mapped[str] = mapped_column(String(36), index=True)
+    agent: Mapped[str] = mapped_column(String(50))
+    requested_model: Mapped[str] = mapped_column(String(150))
+    model: Mapped[str] = mapped_column(String(150))
+    response_id: Mapped[str | None] = mapped_column(String(150), unique=True, nullable=True)
+    status: Mapped[str] = mapped_column(String(30))
+    input_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    cached_input_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    output_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    estimated_cost_usd: Mapped[float | None] = mapped_column(Numeric(20, 12), nullable=True)
+    rates: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
 
 
 class Finding(BaseModel):

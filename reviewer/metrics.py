@@ -5,7 +5,7 @@ from prometheus_client.core import GaugeMetricFamily
 from sqlalchemy import func, select
 
 from reviewer.database import session
-from reviewer.models import Job, now
+from reviewer.models import Generation, Job, now
 
 
 class QueueCollector:
@@ -31,6 +31,47 @@ class QueueCollector:
             age.add_metric([], max(0, (now() - oldest).total_seconds()) if oldest else 0)
         yield counts
         yield age
+        tokens = GaugeMetricFamily(
+            "diffsentry_llm_tokens",
+            "Persisted provider-reported tokens; cached input is a subset of input",
+            labels=["agent", "model", "type"],
+        )
+        cost = GaugeMetricFamily(
+            "diffsentry_llm_estimated_cost_usd",
+            "Known estimated cost subtotal, not provider invoice",
+            labels=["agent", "model"],
+        )
+        unknown = GaugeMetricFamily(
+            "diffsentry_llm_unpriced_calls",
+            "Observed calls without a cost estimate",
+            labels=["agent", "model"],
+        )
+        with session() as db:
+            rows = db.execute(
+                select(
+                    Generation.agent,
+                    Generation.model,
+                    func.sum(Generation.input_tokens),
+                    func.sum(Generation.cached_input_tokens),
+                    func.sum(Generation.output_tokens),
+                    func.sum(Generation.estimated_cost_usd),
+                    func.count(Generation.id) - func.count(Generation.estimated_cost_usd),
+                ).group_by(Generation.agent, Generation.model)
+            )
+            for agent, model, input_count, cached, output, subtotal, missing in rows:
+                for label, value in [
+                    ("input", input_count),
+                    ("cached_input", cached),
+                    ("output", output),
+                ]:
+                    if value is not None:
+                        tokens.add_metric([agent, model, label], value)
+                if subtotal is not None:
+                    cost.add_metric([agent, model], float(subtotal))
+                unknown.add_metric([agent, model], missing)
+        yield tokens
+        yield cost
+        yield unknown
 
 
 def queue_metrics():

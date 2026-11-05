@@ -6,7 +6,8 @@ from sqlalchemy.exc import IntegrityError
 from reviewer.api import authorize, make_app
 from reviewer.config import get_settings
 from reviewer.database import session
-from reviewer.models import Job, Review
+from reviewer.models import Generation, Job, Review
+from reviewer.usage import usage_summary
 
 app = make_app("webhook")
 
@@ -153,3 +154,38 @@ def metrics():
         return Response(queue_metrics(), media_type=CONTENT_TYPE_LATEST)
     except Exception:
         raise HTTPException(503, "Queue metrics unavailable") from None
+
+
+@app.get("/reviews/{review_id}/usage", dependencies=[Depends(authorize)])
+def review_usage(review_id: str):
+    with session() as db:
+        review = db.get(Review, review_id)
+        if review is None:
+            raise HTTPException(404, "Review not found")
+        rows = db.scalars(
+            select(Generation)
+            .where(Generation.review_id == review_id)
+            .order_by(Generation.created_at)
+        ).all()
+        return {
+            "review_id": review_id,
+            "repo": review.repo,
+            "head_sha": review.head_sha,
+            "summary": usage_summary(rows),
+            "generations": [
+                {
+                    "agent": g.agent,
+                    "model": g.model,
+                    "response_id": g.response_id,
+                    "status": g.status,
+                    "input_tokens": g.input_tokens,
+                    "cached_input_tokens": g.cached_input_tokens,
+                    "output_tokens": g.output_tokens,
+                    "estimated_cost_usd": str(g.estimated_cost_usd)
+                    if g.estimated_cost_usd is not None
+                    else None,
+                    "rates": g.rates,
+                }
+                for g in rows
+            ],
+        }

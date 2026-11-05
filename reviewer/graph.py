@@ -1,4 +1,6 @@
+import asyncio
 import json
+import logging
 import operator
 from contextlib import nullcontext
 from typing import Annotated, TypedDict
@@ -9,6 +11,7 @@ from openai import AsyncOpenAI
 from reviewer.config import get_settings
 from reviewer.diff import added_lines, validate_findings
 from reviewer.models import AgentOutput, Finding
+from reviewer.usage import langfuse_details, persist_usage, usage_data
 
 AGENTS = {
     "static_analysis": "Find concrete correctness bugs, broken control flow, and resource leaks.",
@@ -31,6 +34,7 @@ class State(TypedDict):
     candidates: Annotated[list[Finding], operator.add]
     findings: list[Finding]
     warnings: list[str]
+    review_id: str | None
 
 
 def demo_findings(agent, files):
@@ -60,7 +64,7 @@ def demo_findings(agent, files):
     return results
 
 
-async def run_agent(agent, files, patterns):
+async def run_agent(agent, files, patterns, *, review_id=None):
     settings = get_settings()
     if settings.review_mode == "demo":
         return demo_findings(agent, files)
@@ -75,25 +79,50 @@ async def run_agent(agent, files, patterns):
             name=f"review-{agent}",
             model=settings.openai_model,
         )
-    with observation:
-        async with AsyncOpenAI(
-            api_key=settings.openai_api_key, timeout=90, max_retries=2
-        ) as client:
-            response = await client.responses.parse(
-                model=settings.openai_model,
-                input=[
-                    {"role": "system", "content": SYSTEM + AGENTS[agent]},
-                    {
-                        "role": "user",
-                        "content": json.dumps(
-                            {"files": files, "historical_observations": patterns}
-                        ),
-                    },
-                ],
-                text_format=AgentOutput,
-                max_output_tokens=6000,
-                store=False,
+    with observation as generation:
+        try:
+            async with AsyncOpenAI(
+                api_key=settings.openai_api_key, timeout=90, max_retries=2
+            ) as client:
+                response = await client.responses.parse(
+                    model=settings.openai_model,
+                    input=[
+                        {"role": "system", "content": SYSTEM + AGENTS[agent]},
+                        {
+                            "role": "user",
+                            "content": json.dumps(
+                                {"files": files, "historical_observations": patterns}
+                            ),
+                        },
+                    ],
+                    text_format=AgentOutput,
+                    max_output_tokens=6000,
+                    store=False,
+                )
+        except (Exception, asyncio.CancelledError) as exc:
+            await asyncio.to_thread(
+                persist_usage, review_id, usage_data(None, agent, status=type(exc).__name__)
             )
+            raise
+        data = usage_data(response, agent)
+        # Commit independently of the review transaction, including refusals and
+        # incomplete responses. Other parallel nodes may still fail afterward.
+        await asyncio.to_thread(persist_usage, review_id, data)
+        if generation is not None:
+            try:
+                generation.update(
+                    **langfuse_details(data),
+                    metadata={
+                        "review_id": review_id,
+                        "agent": agent,
+                        "response_id": data["response_id"],
+                        "response_status": data["status"],
+                    },
+                )
+            except Exception as exc:
+                logging.getLogger(__name__).warning(
+                    "Langfuse usage update failed: %s", type(exc).__name__
+                )
         if response.status != "completed" or response.output_parsed is None:
             raise RuntimeError(f"{agent}: model refused or returned an incomplete response")
         return [Finding(**f.model_dump(), agent=agent) for f in response.output_parsed.findings]
@@ -105,7 +134,11 @@ def build_graph():
 
         def make_node(name):
             async def node(state):
-                return {"candidates": await run_agent(name, state["files"], state["patterns"])}
+                return {
+                    "candidates": await run_agent(
+                        name, state["files"], state["patterns"], review_id=state.get("review_id")
+                    )
+                }
 
             return node
 
@@ -124,7 +157,16 @@ def build_graph():
     return graph.compile()
 
 
-async def review_files(files, patterns=None):
-    return await build_graph().ainvoke(
-        {"files": files, "patterns": patterns or [], "candidates": []}
-    )
+async def review_files(files, patterns=None, *, review_id=None):
+    observation = nullcontext()
+    if get_settings().langfuse_enabled:
+        from langfuse import get_client
+
+        observation = get_client().start_as_current_observation(
+            name="pull-request-review",
+            metadata={"review_id": review_id},
+        )
+    with observation:
+        return await build_graph().ainvoke(
+            {"files": files, "patterns": patterns or [], "candidates": [], "review_id": review_id}
+        )

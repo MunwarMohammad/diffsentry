@@ -46,7 +46,11 @@ def analyze(request: ReviewRequest):
                 .limit(10)
             ).all()
             result = (
-                asyncio.run(asyncio.wait_for(review_files(files, patterns), timeout=300))
+                asyncio.run(
+                    asyncio.wait_for(
+                        review_files(files, patterns, review_id=review.id), timeout=300
+                    )
+                )
                 if files
                 else {"findings": [], "warnings": ["No eligible added lines available for review"]}
             )

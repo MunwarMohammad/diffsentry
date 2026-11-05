@@ -20,6 +20,7 @@ jobs:
       - run: uv run pytest --cov=reviewer --cov=services --cov-report=term-missing
       - run: uv run python -m scripts.evaluate
       - run: docker compose --profile monitoring up -d --build --wait
+      - run: docker compose exec -T orchestrator python -m scripts.check_usage
       - run: uv run python -m scripts.smoke
       - run: uv run python -m scripts.resilience
       - run: uv run python -m scripts.backup --verify

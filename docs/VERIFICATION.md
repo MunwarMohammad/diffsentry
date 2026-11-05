@@ -1,12 +1,12 @@
 # Verification record
 
-Updated local verification on November 2, 2026 (America/Chicago), using Python 3.12 and Docker Desktop on this Mac.
+Updated local verification on November 5, 2026 (America/Chicago), using Python 3.12 and Docker Desktop on this Mac.
 
 | Check | Result |
 |---|---|
 | Ruff lint and formatting | Passed |
-| Unit/service tests | 41 passed |
-| Statement coverage, application/services | 90% |
+| Unit/service tests | 54 passed |
+| Statement coverage, application/services | 91% |
 | Offline four-agent demo | Three findings with correct fixture line locations |
 | Labeled fixture evaluation | Precision 1.0, recall 1.0 in deterministic demo mode |
 | Alembic migration + schema comparison | Upgrade succeeded; no new upgrade operations detected |
@@ -15,6 +15,8 @@ Updated local verification on November 2, 2026 (America/Chicago), using Python 3
 | Duplicate delivery and broker outage | 100 concurrent duplicate webhooks accepted while Redis was stopped; exactly one review/job, completed after restart |
 | Backup restoration | Custom-format PostgreSQL backup restored into a disposable database; row counts matched |
 | Operational alert rules | Three Prometheus alert rules passed promtool validation |
+| PostgreSQL usage persistence | Four mocked agents recorded usage with parent review locked; records survived rollback in an isolated schema |
+| Token/cost accounting | Cached input math, unknown costs, rate snapshots, idempotency, four-agent aggregation and Langfuse updates pass mocked-provider tests |
 | S3 archive worker | Separate durable job; retry/idempotency verified with mocked S3 |
 | Merge learning | Completed once; both jobs reached done |
 | Prometheus | All five service targets and durable queue scrape up |

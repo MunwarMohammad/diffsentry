@@ -1,9 +1,17 @@
+from decimal import Decimal
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class TokenRates(BaseModel):
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+    input_per_million: Decimal = Field(ge=0)
+    cached_input_per_million: Decimal = Field(ge=0)
+    output_per_million: Decimal = Field(ge=0)
 
 
 class Settings(BaseSettings):
@@ -18,6 +26,7 @@ class Settings(BaseSettings):
     github_app_private_key_path: str = ""
     openai_api_key: str = ""
     openai_model: str = "gpt-4o-mini"
+    openai_pricing: dict[str, TokenRates] = Field(default_factory=dict)
     review_mode: Literal["demo", "live"] = "demo"
     publish_reviews: bool = False
     allowed_repositories: str = ""

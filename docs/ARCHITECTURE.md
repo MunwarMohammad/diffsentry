@@ -46,7 +46,7 @@ Repository code and historical observations are passed as untrusted user data. T
 
 Learning stores observations from reviewed merged heads. It cannot determine whether developers accepted or fixed individual suggestions. These observations are never promoted to trusted system instructions.
 
-The reference design mentions S3 report storage. Terraform provides an optional private bucket. Set `REPORTS_S3_BUCKET` to archive completed review reports; runtime data remains in PostgreSQL and evaluation reports remain local/CI artifacts. Optional automatic S3 archival uses separately retryable jobs. Langfuse spans provide basic generation tracing; token-cost accounting and quality dashboards are future extensions.
+The reference design mentions S3 report storage. Terraform provides an optional private bucket. Set `REPORTS_S3_BUCKET` to archive completed review reports; runtime data remains in PostgreSQL and evaluation reports remain local/CI artifacts. Optional automatic S3 archival uses separately retryable jobs. Langfuse generations receive provider token usage and configured cost estimates. The PostgreSQL usage ledger, protected per-review usage API and Grafana panels retain usage/cost data independently of external tracing. Live Langfuse ingestion and model accuracy still require account-specific verification.
 
 ## Operational boundaries
 

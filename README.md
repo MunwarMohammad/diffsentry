@@ -58,7 +58,8 @@ docker compose stop
 - Reconciliation markers for retries after GitHub accepted a review but the database commit failed.
 - Idempotent learning on merge. Observations are labeled unverified; merge is **not** treated as proof that a suggestion was accepted.
 - Docker Compose, non-root image, Kubernetes manifests, optional AWS Terraform infrastructure.
-- Prometheus service and durable queue metrics, alert rules, provisioned Grafana dashboard, optional Langfuse generation spans.
+- Provider token usage and estimated-cost ledger per agent/PR commit, optional Langfuse usage/cost export, and Grafana token/cost charts.
+- Prometheus service and durable queue metrics, alert rules, and a provisioned Grafana dashboard.
 - Tests, fixture evaluation, GitHub Actions CI, manual image release workflow, weekly offline regression evaluation.
 
 ## Architecture
@@ -124,13 +125,14 @@ docker compose --profile monitoring up -d
 - Grafana: http://localhost:3100 — local credentials `admin` / `local-demo-only`.
 - Prometheus: http://localhost:9190.
 - Dashboard: **DiffSentry · Service health**.
-- Langfuse: optional, off by default. Set its public/secret keys, `LANGFUSE_BASE_URL`, and `LANGFUSE_ENABLED=true`. The code records agent generation spans without deliberately attaching source code or findings. Live tracing requires separate verification with your Langfuse project.
+- Langfuse: optional, off by default. Set its public/secret keys, `LANGFUSE_BASE_URL`, and `LANGFUSE_ENABLED=true`. The code records agent generation spans with token usage and configured cost estimates, without attaching source code or findings. Live tracing requires separate verification with your Langfuse project.
 
 ## Deployment and project guide
 
 - [Create your GitHub App](docs/GITHUB_APP_SETUP.md)
 - [Live GitHub/OpenAI setup](docs/LIVE_SETUP.md)
 - [Recovery, alerts, backups and archival](docs/OPERATIONS.md)
+- [Token usage, cost tracking and per-commit reviews](docs/USAGE_TRACKING.md)
 - [AWS and Kubernetes deployment](docs/DEPLOYMENT.md)
 - [Architecture, reliability tradeoffs, and source-material audit](docs/ARCHITECTURE.md)
 - [Suggested build/learning order](docs/LEARNING_PATH.md)
